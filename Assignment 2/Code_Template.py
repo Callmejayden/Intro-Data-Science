@@ -4,7 +4,7 @@ from bs4 import BeautifulSoup
 import matplotlib.pyplot as plt
 
 class EuropeanFootballAnalysis:
-    def __init__(self, filename = None):
+    def __init__(self, filename = "Player_Stats.html"):
         self.file = filename
         
         # Container for Raw data
@@ -89,7 +89,15 @@ class EuropeanFootballAnalysis:
         Task 1: Read data from the html file and extraction table.
         populates self.raw_data as a pandas DataFrame.
         """
+        
+        with open(self.filename) as fp:
+            soup = BeautifulSoup(fp)
+
+        
+
         # Replace with your code
+
+
         pass
 
     def clean_data(self):
@@ -250,5 +258,6 @@ class EuropeanFootballAnalysis:
     
 if __name__ == "__main__":
     # Complete driver code to demonstrate functionality
+
     pass
 

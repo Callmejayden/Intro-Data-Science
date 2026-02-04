@@ -1,12 +1,19 @@
 import pandas as pd
+from pathlib import Path
 import numpy as np
 from bs4 import BeautifulSoup
 import matplotlib.pyplot as plt
 
+
 class EuropeanFootballAnalysis:
     def __init__(self, filename = "Player_Stats.html"):
-        self.file = filename
-        
+
+        # folder containing this file
+        base_dir = Path(__file__).resolve().parent   
+
+        # full path to HTML
+        self.file = base_dir / filename
+
         # Container for Raw data
         self.raw_data = None 
         
@@ -94,12 +101,13 @@ class EuropeanFootballAnalysis:
             soup = BeautifulSoup(fp,'lxml')
         # Locate the Standard Stats table by its HTML id
         table = soup.find("table", id="stats_standard")
+
         # Convert the HTML table into a pandas DataFrame and store it as raw_data
         self.raw_data = pd.read_html(str(table))[0]
+
         # print the shape and first 10 rows of the DataFrame
         print(self.raw_data.shape)
-        print(self.raw_data.head(10))
-
+        self.raw_data.head(10)
 
         pass
 
@@ -260,8 +268,6 @@ class EuropeanFootballAnalysis:
         pass
     
 if __name__ == "__main__":
-    # Complete driver code to demonstrate functionality
     efa = EuropeanFootballAnalysis("Player_Stats.html")
     efa.scrape()
-    pass
 

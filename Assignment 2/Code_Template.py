@@ -3,6 +3,7 @@ from pathlib import Path
 import numpy as np
 from bs4 import BeautifulSoup
 import matplotlib.pyplot as plt
+from io import StringIO
 
 
 class EuropeanFootballAnalysis:
@@ -96,18 +97,18 @@ class EuropeanFootballAnalysis:
         Task 1: Read data from the html file and extraction table.
         populates self.raw_data as a pandas DataFrame.
         """
-        # Open the HTML file and parse it using BeautifulSoup with the lxml parser
+        # open the HTML file and parse it using BeautifulSoup with the lxml parser
         with open(self.file, "r", encoding="utf-8") as fp:
             soup = BeautifulSoup(fp,'lxml')
         # Locate the Standard Stats table by its HTML id
         table = soup.find("table", id="stats_standard")
 
-        # Convert the HTML table into a pandas DataFrame and store it as raw_data
-        self.raw_data = pd.read_html(str(table))[0]
+        # convert the HTML table into a pandas and store it as raw_data
+        self.raw_data = pd.read_html(StringIO(str(table)))[0]
 
-        # print the shape and first 10 rows of the DataFrame
+        # print to test !
         print(self.raw_data.shape)
-        self.raw_data.head(10)
+        print(self.raw_data.head(10))
 
         pass
 

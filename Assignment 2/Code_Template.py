@@ -138,6 +138,7 @@ class EuropeanFootballAnalysis:
 
 
         self.cleaned_data = self.raw_data.copy()
+        self.cleaned_data.columns = [str(c).strip() for c in self.cleaned_data.columns]
 
         # drop rows where all elements are NaN
         self.cleaned_data.dropna(how='all', inplace=True)  
@@ -155,6 +156,9 @@ class EuropeanFootballAnalysis:
         for c in cols_string:
             if c in self.cleaned_data.columns and self.cleaned_data[c].dtype == object:
                 self.cleaned_data[c] = self.cleaned_data[c].str.strip()
+        # remove repeated header rows (safety)
+        if "Min" in self.cleaned_data.columns:
+            self.cleaned_data = self.cleaned_data[self.cleaned_data["Min"].astype(str).str.strip() != "Min"].copy()
 
 
         # Convert numeric columns with commas to numeric data
@@ -178,7 +182,20 @@ class EuropeanFootballAnalysis:
 
         # Map team to color
         self.cleaned_data["Team_Color"] = self.cleaned_data["Squad"].map(self.team_colors)
-        
+
+        # Nation 3 letter code
+        if "Nation" in self.cleaned_data.columns:
+            self.cleaned_data["Nation"] = self.cleaned_data["Nation"].astype(str).str.extract(r"([A-Z]{3})", expand=False)
+
+        # extract League from comp
+        if "Comp" in self.cleaned_data.columns:
+            self.cleaned_data["League"] = self.cleaned_data["Comp"].astype(str).str.split(" ", n=1).str[-1].str.strip()
+
+        # NaN -> 0
+        num_cols = self.cleaned_data.select_dtypes(include=["number"]).columns
+        self.cleaned_data[num_cols] = self.cleaned_data[num_cols].fillna(0)
+        print(self.cleaned_data[num_cols].isna().sum()) # check NaN for task2
+
         pass
 
 
@@ -349,10 +366,9 @@ if __name__ == "__main__":
     analysis.scrape()  # sets raw_data
 
     analysis.clean_data()   # returns + stores self.clean_data
-    print(analysis.cleaned_data.head(20))
-
+    #print(analysis.cleaned_data.head(20))
+    #print(analysis.cleaned_data[["Player","Nation","Comp","League","Playing Time Min"]].head(20))
     #print(analysis.cleaned_data[["Player", "Pos", "Primary_Pos","Primary_Pos_Full"]].head(20))
     
     #analysis.add_derived_metrics() TODO
-
 

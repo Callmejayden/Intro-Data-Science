@@ -139,6 +139,13 @@ class EuropeanFootballAnalysis:
 
         self.cleaned_data = self.raw_data.copy()
 
+        # drop rows where all elements are NaN
+        self.cleaned_data.dropna(how='all', inplace=True)  
+        self.cleaned_data.reset_index(drop=True, inplace=True)
+
+        # drop matches col, not useful for analysis
+        self.cleaned_data.drop("Matches", axis=1, inplace=True)
+
         # Remove special characters (keeps letters, numbers, underscores and whitespace)
         self.cleaned_data = self.cleaned_data.replace(to_replace=r'[^\w\s]', value='', regex=True)
 
@@ -165,8 +172,6 @@ class EuropeanFootballAnalysis:
             self.cleaned_data["Primary_Pos"] = self.cleaned_data["Pos"].apply(self._extract_primary_position)
         else:
             self.cleaned_data["Primary_Pos"] = np.nan
-
-        # Additional parsing (nation, transfers, etc.) can be added here
 
         # Map primary position to full name
         self.cleaned_data["Primary_Pos_Full"] = self.cleaned_data["Primary_Pos"].map(self.position_map)
@@ -342,17 +347,12 @@ if __name__ == "__main__":
 
     analysis = EuropeanFootballAnalysis()
     analysis.scrape()  # sets raw_data
-    #print(analysis.raw_data.head())
-
 
     analysis.clean_data()   # returns + stores self.clean_data
     print(analysis.cleaned_data.head(20))
 
-    #analysis._extract_primary_position("Pos")  # adds Primary_Pos column to cleaned_data
-
     #print(analysis.cleaned_data[["Player", "Pos", "Primary_Pos","Primary_Pos_Full"]].head(20))
     
-
-    #analysis.add_derived_metrics()
+    #analysis.add_derived_metrics() TODO
 
 

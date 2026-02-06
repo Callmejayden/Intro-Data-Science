@@ -156,19 +156,36 @@ class EuropeanFootballAnalysis:
         for c in cols_string:
             if c in self.cleaned_data.columns and self.cleaned_data[c].dtype == object:
                 self.cleaned_data[c] = self.cleaned_data[c].str.strip()
-        # remove repeated header rows (safety)
-        if "Min" in self.cleaned_data.columns:
-            self.cleaned_data = self.cleaned_data[self.cleaned_data["Min"].astype(str).str.strip() != "Min"].copy()
+        # remove repeated header rows
+        if "Playing Time Min" in self.cleaned_data.columns:
+            self.cleaned_data = self.cleaned_data[
+                self.cleaned_data["Playing Time Min"].astype(str).str.strip() != "Min"
+            ].copy()
+
+        if "Playing Time MP" in self.cleaned_data.columns:
+            self.cleaned_data = self.cleaned_data[
+                self.cleaned_data["Playing Time MP"].astype(str).str.strip() != "MP"
+            ].copy()
 
 
-        # Convert numeric columns with commas to numeric data
-        cols_numeric = ["Age", "Gls", "Ast", "Min", "Matches", "Yellow Cards", "Red Cards", "xG", "xAG", "Shots", "xG per Shot", "xAG per Shot", "xG per 90", "xAG per 90", "G+A per 90", "Yellow Cards per 90", "Red Cards per 90", "Matches per 90"]
+        # convert numeric columns to numbers
+        cols_numeric = [
+            "Age",
+            "Playing Time MP", "Playing Time Min",
+            "Performance Gls", "Performance Ast",
+            "Performance CrdY", "Performance CrdR",
+            "Per 90 Minutes Gls", "Per 90 Minutes Ast", "Per 90 Minutes G+A",
+        ]
+
         for c in cols_numeric:
             if c in self.cleaned_data.columns:
-                if self.cleaned_data[c].dtype == object:
-                    # Replace commas and strip whitespace, then convert to numeric
-                    self.cleaned_data[c] = self.cleaned_data[c].str.replace(',', '', regex=False).str.strip()
-                self.cleaned_data[c] = pd.to_numeric(self.cleaned_data[c], errors='coerce')
+                self.cleaned_data[c] = (
+                    self.cleaned_data[c]
+                    .astype(str)
+                    .str.replace(",", "", regex=False)
+                    .str.strip()
+                )
+                self.cleaned_data[c] = pd.to_numeric(self.cleaned_data[c], errors="coerce")
 
 
         # Populate primary position column using helper
@@ -229,7 +246,25 @@ class EuropeanFootballAnalysis:
         """
         Task 4: Add Minutes_per_Game, and Goal_Contribution_Rate. The derived metrics should be added as new columns to self.cleaned_data.
         """
-        # Replace with your code
+        df = self.cleaned_data.copy()
+
+        mp_col = "Playing Time MP"
+        min_col = "Playing Time Min"
+        gls_col = "Performance Gls"
+        ast_col = "Performance Ast"
+
+        # Minutes per game
+        df["Minutes_per_Game"] = np.where(df[mp_col] > 0, df[min_col] / df[mp_col], 0)
+
+        # Goal contribution rate per minute
+        df["Goal_Contribution_Rate"] = np.where(
+            df[min_col] > 0,
+            (df[gls_col] + df[ast_col]) / df[min_col],
+            0
+        )
+
+        self.cleaned_data = df
+        return df
         pass
 
     def find_top_scorer(self):
@@ -364,9 +399,22 @@ if __name__ == "__main__":
 
     analysis = EuropeanFootballAnalysis()
     analysis.scrape()  # sets raw_data
-
     analysis.clean_data()   # returns + stores self.clean_data
-    print(analysis.cleaned_data.head(20))
+    analysis.add_derived_metrics()
+
+
+    print(
+        analysis.cleaned_data[
+            ["Player",
+            "Performance Gls",
+            "Performance Ast",
+            "Playing Time Min",
+            "Playing Time MP",
+            "Minutes_per_Game",
+            "Goal_Contribution_Rate"]
+        ].head(10)
+    )    
+    #print(analysis.cleaned_data.head(20))
     #print(analysis.cleaned_data[["Player","Nation","Comp","League","Playing Time Min"]].head(20))
     #print(analysis.cleaned_data[["Player", "Pos", "Primary_Pos","Primary_Pos_Full"]].head(20))
     

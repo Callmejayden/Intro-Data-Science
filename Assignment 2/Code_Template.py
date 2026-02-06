@@ -4,6 +4,7 @@ import numpy as np
 from bs4 import BeautifulSoup
 import matplotlib.pyplot as plt
 from io import StringIO
+import re
 
 
 class EuropeanFootballAnalysis:
@@ -100,19 +101,29 @@ class EuropeanFootballAnalysis:
         # open the HTML file and parse it using BeautifulSoup with the lxml parser
         with open(self.file, "r", encoding="utf-8") as fp:
             soup = BeautifulSoup(fp,'lxml')
+
         # Locate the Standard Stats table by its HTML id
         table = soup.find("table", id="stats_standard")
 
         # convert the HTML table into a pandas and store it as raw_data
         self.raw_data = pd.read_html(StringIO(str(table)))[0]
 
+        def flatten_col(col):
+            if isinstance(col, tuple):
+                parts = [str(p).strip() for p in col if 'Unnamed' not in str(p)]
+                return ' '.join(parts).strip() or col[-1]
+            return col
+
+        self.raw_data.columns = [flatten_col(c) for c in self.raw_data.columns]
+
         # print to test !
-        print(self.raw_data.shape)
-        print(self.raw_data.head(10))
+        #print(self.raw_data.shape)
+        #print(self.raw_data.head(10))
 
         pass
 
     def clean_data(self):
+
         """
         Task 2 & 3: Clean data.
         - Remove special characters from data
@@ -121,17 +132,76 @@ class EuropeanFootballAnalysis:
         - Parse Position: extract primary position and add a new column to data
         - Convert Columns to numbers based on the type of data
         - Populates self.cleaned_data as a pandas DataFrame.
+
+        -Also Maps Team Colors and Position Full Names for later use in visualizations.
         """
-        # Replace with your code
+
+
+        self.cleaned_data = self.raw_data.copy()
+
+        # Remove special characters (keeps letters, numbers, underscores and whitespace)
+        self.cleaned_data = self.cleaned_data.replace(to_replace=r'[^\w\s]', value='', regex=True)
+
+
+        # Strip whitespace from common string columns
+        cols_string = ["Squad", "League", "Nation", "Pos", "Player", "Team"]
+        for c in cols_string:
+            if c in self.cleaned_data.columns and self.cleaned_data[c].dtype == object:
+                self.cleaned_data[c] = self.cleaned_data[c].str.strip()
+
+
+        # Convert numeric columns with commas to numeric data
+        cols_numeric = ["Age", "Gls", "Ast", "Min", "Matches", "Yellow Cards", "Red Cards", "xG", "xAG", "Shots", "xG per Shot", "xAG per Shot", "xG per 90", "xAG per 90", "G+A per 90", "Yellow Cards per 90", "Red Cards per 90", "Matches per 90"]
+        for c in cols_numeric:
+            if c in self.cleaned_data.columns:
+                if self.cleaned_data[c].dtype == object:
+                    # Replace commas and strip whitespace, then convert to numeric
+                    self.cleaned_data[c] = self.cleaned_data[c].str.replace(',', '', regex=False).str.strip()
+                self.cleaned_data[c] = pd.to_numeric(self.cleaned_data[c], errors='coerce')
+
+
+        # Populate primary position column using helper
+        if "Pos" in self.cleaned_data.columns:
+            self.cleaned_data["Primary_Pos"] = self.cleaned_data["Pos"].apply(self._extract_primary_position)
+        else:
+            self.cleaned_data["Primary_Pos"] = np.nan
+
+        # Additional parsing (nation, transfers, etc.) can be added here
+
+        # Map primary position to full name
+        self.cleaned_data["Primary_Pos_Full"] = self.cleaned_data["Primary_Pos"].map(self.position_map)
+
+        # Map team to color
+        self.cleaned_data["Team_Color"] = self.cleaned_data["Squad"].map(self.team_colors)
+        
         pass
 
 
     def _extract_primary_position(self, pos_str):
         """
-        Helper for Task 3: Extract primary position from codes like 'FWMF' or 'DF,MF'
+        Helper for Task 3: Extract primary position from codes like 'FWMF' or 'DF,MF'.
+        Returns one of 'GK','DF','MF','FW' when possible, otherwise a short token.
         """
-        # Replace with your code
-        pass
+
+        codes = ['GK', 'DF', 'MF', 'FW']
+
+        if pd.isna(pos_str):
+            return np.nan
+        string = str(pos_str).strip()
+
+        # split on comma, slash, or whitespace and take first token
+        token = re.split(r'[,/\s]+', string)[0].upper()
+
+        if token in codes:
+            return token
+
+        for code in codes:
+            if token.startswith(code):
+                return code
+        
+        # fallback: return first two characters
+        return token[:2]
+
 
     def add_derived_metrics(self):
         """
@@ -269,6 +339,20 @@ class EuropeanFootballAnalysis:
         pass
     
 if __name__ == "__main__":
-    efa = EuropeanFootballAnalysis("Player_Stats.html")
-    efa.scrape()
+
+    analysis = EuropeanFootballAnalysis()
+    analysis.scrape()  # sets raw_data
+    #print(analysis.raw_data.head())
+
+
+    analysis.clean_data()   # returns + stores self.clean_data
+    print(analysis.cleaned_data.head(20))
+
+    #analysis._extract_primary_position("Pos")  # adds Primary_Pos column to cleaned_data
+
+    #print(analysis.cleaned_data[["Player", "Pos", "Primary_Pos","Primary_Pos_Full"]].head(20))
+    
+
+    #analysis.add_derived_metrics()
+
 

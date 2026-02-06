@@ -194,7 +194,7 @@ class EuropeanFootballAnalysis:
         # NaN -> 0
         num_cols = self.cleaned_data.select_dtypes(include=["number"]).columns
         self.cleaned_data[num_cols] = self.cleaned_data[num_cols].fillna(0)
-        print(self.cleaned_data[num_cols].isna().sum()) # check NaN for task2
+        # print(self.cleaned_data[num_cols].isna().sum()) # check NaN for task2
 
         pass
 
@@ -366,7 +366,7 @@ if __name__ == "__main__":
     analysis.scrape()  # sets raw_data
 
     analysis.clean_data()   # returns + stores self.clean_data
-    #print(analysis.cleaned_data.head(20))
+    print(analysis.cleaned_data.head(20))
     #print(analysis.cleaned_data[["Player","Nation","Comp","League","Playing Time Min"]].head(20))
     #print(analysis.cleaned_data[["Player", "Pos", "Primary_Pos","Primary_Pos_Full"]].head(20))
     

@@ -319,13 +319,13 @@ class EuropeanFootballAnalysis:
         minutes_col = "Playing Time Min"
         matches_col = "Playing Time MP"
 
-        # Ensure numeric
+        # convert num value
         df[minutes_col] = pd.to_numeric(df[minutes_col], errors="coerce").fillna(0)
         df[matches_col] = pd.to_numeric(df[matches_col], errors="coerce").fillna(0)
 
-        # Find max minutes played
+        # find max minute
         max_minutes = df[minutes_col].max()
-
+        #select players who have maximum minute
         ironman = df.loc[
             df[minutes_col] == max_minutes,
             [player_col, team_col, minutes_col, matches_col]
@@ -373,49 +373,9 @@ class EuropeanFootballAnalysis:
     def find_most_disciplined(self):
         """
         Task 9: Find the player(s) with the lowest number of yellow cards and red cards after playing for 90 minutes. The total minutes played should be more than 1000 minutes. Return player name, team, yellow cards, red cards, discipline score (cards per 90), position.
-
-
-        note: The assignment PDF says finding the player with the HIGHEST discipline score.
-        we follow the PDF requirement (highest discipline score).
         """
-        df = self.cleaned_data.copy()
-
-        player_col = "Player"
-        team_col = "Squad"
-        y_col = "Performance CrdY"
-        r_col = "Performance CrdR"
-        min_col = "Playing Time Min"
-        nineties_col = "Playing Time 90s"
-        pos_col = "Primary_Pos"
-        
-        # convert to num
-        for c in [y_col, r_col, min_col, nineties_col]:
-            df[c] = pd.to_numeric(df[c], errors="coerce").fillna(0)
-        
-        #filter players with >1000 min
-        eligible = df[df[min_col]>1000].copy()
-
-        # if 90s -> missing, zero
-        if nineties_col not in eligible.columns:
-            eligible[nineties_col] = eligible[min_col] / 90.0
-        else:
-            # if 90s is 0, compute from minutes
-            eligible[nineties_col] = np.where(
-                eligible[nineties_col] > 0,
-                eligible[nineties_col],
-                eligible[min_col] / 90.0
-            )
-        eligible["Discipline_Score"] = np.where(
-            eligible[nineties_col] > 0,
-            (eligible[r_col] + eligible[y_col] * 0.5) / eligible[nineties_col],
-            0
-        )
-        # discipline score
-        max_score = eligible["Discipline_Score"].max()
-
-        result = eligible.loc[eligible["Discipline_Score"] == max_score, [player_col, team_col, y_col, r_col, "Discipline_Score", pos_col]].copy()
-        result = result.sort_values([team_col, player_col]).reset_index(drop=True)
-        return result
+        # Replace with your code
+        pass
 
     def compare_leagues_attack(self):
         """
@@ -427,14 +387,14 @@ class EuropeanFootballAnalysis:
         minutes_col = "Playing Time Min"
         league_col = "League"
 
-        # Ensure numeric
+        # make them to num
         df[goals_col] = pd.to_numeric(df[goals_col], errors="coerce").fillna(0)
         df[minutes_col] = pd.to_numeric(df[minutes_col], errors="coerce").fillna(0)
 
-        # Remove players with no minutes
+        # Remove players who didnt play
         df = df[df[minutes_col] > 0]
 
-        # Aggregate by league
+        # groupby leauge with goal and minute
         league_stats = (
             df.groupby(league_col)
             .agg(
@@ -443,14 +403,14 @@ class EuropeanFootballAnalysis:
             )
         )
 
-        # Compute goals per 90
+        # average goals per 90
         league_stats["Avg_Goals_per_90"] = (
                 league_stats["total_goals"] / league_stats["total_minutes"] * 90
         )
-
+        #sort leagues
         league_stats = league_stats.sort_values("Avg_Goals_per_90", ascending=False)
 
-        # Bar chart
+        # bar chart
         plt.figure(figsize=(10, 6))
         plt.bar(
             league_stats.index,
@@ -573,7 +533,5 @@ if __name__ == "__main__":
     #print(analysis.cleaned_data[["Player", "Pos", "Primary_Pos","Primary_Pos_Full"]].head(20))
     
     #analysis.add_derived_metrics()
-    # print(analysis.find_ironman())
-    # print(analysis.find_most_disciplined())
-    # print(analysis.compare_leagues_attack())
+
 

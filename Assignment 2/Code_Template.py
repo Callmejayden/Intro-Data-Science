@@ -370,7 +370,7 @@ class EuropeanFootballAnalysis:
         best = best.sort_values([team_col, player_col]).reset_index(drop=True) 
         return best
 
-        def find_most_disciplined(self):
+    def find_most_disciplined(self):
         """
         Task 9: Find the player(s) with the lowest number of yellow cards and red cards after playing for 90 minutes. The total minutes played should be more than 1000 minutes. Return player name, team, yellow cards, red cards, discipline score (cards per 90), position.
 
@@ -477,8 +477,84 @@ class EuropeanFootballAnalysis:
           (1) Average G+A by Primary Position
           (2) Average G+A by Primary Position per League
         """
-        # Replace with your code
-        pass
+        df = self.cleaned_data.copy()
+
+        pos_col = "Primary_Pos"
+        league_col = "League"
+        goals_col = "Performance Gls"
+        ast_col = "Performance Ast"
+        min_col = "Playing Time Min"
+
+        # num check
+        for c in [goals_col, ast_col, min_col]:
+            df[c] = pd.to_numeric(df[c], errors="coerce").fillna(0)
+
+        # G+A per 90
+        df["GA_per90"] = np.where(
+            df[min_col] > 0,
+            (df[goals_col] + df[ast_col]) / df[min_col] * 90,
+            0
+        )
+
+        # remove players who didnt play
+        df = df[df[min_col] > 0]
+
+        # order positions
+        pos_order = ["GK", "DF", "MF", "FW"]
+
+        #  subplot 1
+        avg_pos = (
+            df.groupby(pos_col)["GA_per90"]
+            .mean()
+            .reindex(pos_order)
+        )
+
+        # subplot 2
+        league_pos = (
+            df.groupby([league_col, pos_col])["GA_per90"]
+            .mean()
+            .reset_index()
+        )
+
+        pivot = league_pos.pivot(index=pos_col, columns=league_col, values="GA_per90")
+        pivot = pivot.reindex(pos_order)
+
+        # plotting
+        fig, ax = plt.subplots(1, 2, figsize=(15, 6))
+
+        # first plot - overall position
+        ax[0].bar(avg_pos.index, avg_pos.values)
+        ax[0].set_title("Average G+A per 90 by Position")
+        ax[0].set_xlabel("Position")
+        ax[0].set_ylabel("G+A per 90")
+
+        # second plot (position per league
+        x = np.arange(len(pos_order))
+        width = 0.15
+
+        for i, league in enumerate(pivot.columns):
+            ax[1].bar(
+                x + i * width,
+                pivot[league].fillna(0),
+                width,
+                label=league,
+                color=self.colors.get(league)
+            )
+
+        ax[1].set_xticks(x + width)
+        ax[1].set_xticklabels(pos_order)
+        ax[1].set_title("Average G+A per 90 by Position per League")
+        ax[1].legend()
+
+        plt.tight_layout()
+        plt.show()
+
+        data = {
+            "position_average": avg_pos.to_dict(),
+            "league_position_average": pivot.to_dict()
+        }
+
+        return fig, data
 
     def age_curve_analysis(self):
         """
@@ -573,5 +649,8 @@ if __name__ == "__main__":
     #print(analysis.cleaned_data[["Player", "Pos", "Primary_Pos","Primary_Pos_Full"]].head(20))
     
     #analysis.add_derived_metrics()
+    fig, d = analysis.compare_position_productivity()
+    print(d["position_average"])
+    print(list(d["league_position_average"].keys()))
 
 

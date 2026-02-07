@@ -252,14 +252,22 @@ class EuropeanFootballAnalysis:
         min_col = "Playing Time Min"
         gls_col = "Performance Gls"
         ast_col = "Performance Ast"
+        nineties_col = "Playing Time 90s"
 
         # Minutes per game
         df["Minutes_per_Game"] = np.where(df[mp_col] > 0, df[min_col] / df[mp_col], 0)
 
-        # Goal contribution rate per minute
+        # create 90s column if missing
+        if nineties_col not in df.columns:
+            df[nineties_col] = np.where(df[min_col] > 0, df[min_col] / 90.0, 0)
+        else:
+            df[nineties_col] = pd.to_numeric(df[nineties_col], errors="coerce").fillna(0)
+            df[nineties_col] = np.where(df[nineties_col] > 0, df[nineties_col], df[min_col] / 90.0)
+
+        # Goal contribution rate (G+A per 90)
         df["Goal_Contribution_Rate"] = np.where(
-            df[min_col] > 0,
-            (df[gls_col] + df[ast_col]) / df[min_col],
+            df[nineties_col] > 0,
+            (df[gls_col] + df[ast_col]) / df[nineties_col],
             0
         )
 
@@ -560,8 +568,53 @@ class EuropeanFootballAnalysis:
         """
         Task 12: Compare the player age vs Goal Contribution Rate. Return a scatter plot visualization with a trend line and data.
         """
-        # Replace with your code
-        pass
+        df = self.cleaned_data.copy()
+
+        age_col = "Age"
+        rate_col = "Goal_Contribution_Rate"
+        min_col = "Playing Time Min"
+
+        df[age_col] = pd.to_numeric(df[age_col], errors="coerce")
+        df[rate_col] = pd.to_numeric(df[rate_col], errors="coerce").fillna(0)
+
+        # remove bad rows
+        df = df.dropna(subset=[age_col])
+        if min_col in df.columns:
+            df[min_col] = pd.to_numeric(df[min_col], errors="coerce").fillna(0)
+            df = df[df[min_col] > 0]
+
+        x = df[age_col].values
+
+        # make it per 90 so playing time difference is fair
+        y = df[rate_col].values
+
+        # correlation
+        corr = float(pd.Series(x).corr(pd.Series(y)))
+
+        # trendline
+        m, b = np.polyfit(x, y, 1)
+        x_line = np.linspace(x.min(), x.max(), 100)
+        y_line = m * x_line + b
+
+        # plot
+        fig, ax = plt.subplots(figsize=(10, 6))
+        ax.scatter(x, y, alpha=0.5)
+        ax.plot(x_line, y_line, linestyle="--")
+
+        ax.set_title("Age vs Goal Contribution Rate")
+        ax.set_xlabel("Age")
+        ax.set_ylabel("Goal Contribution Rate (G+A per 90)")
+
+        plt.tight_layout()
+        plt.show()
+
+        data = {
+            "correlation_age_vs_goal_contribution_rate": corr,
+            "trendline_slope": float(m),
+            "trendline_intercept": float(b)
+        }
+
+        return fig, data
 
     def league_defensive_discipline(self):
         """
@@ -649,8 +702,10 @@ if __name__ == "__main__":
     #print(analysis.cleaned_data[["Player", "Pos", "Primary_Pos","Primary_Pos_Full"]].head(20))
     
     #analysis.add_derived_metrics()
-    fig, d = analysis.compare_position_productivity()
-    print(d["position_average"])
-    print(list(d["league_position_average"].keys()))
-
-
+    # fig, d = analysis.compare_position_productivity()
+    # print(d["position_average"])
+    # print(list(d["league_position_average"].keys()))
+    # fig12, d12 = analysis.age_curve_analysis()
+    # print(d12)
+    analysis.add_derived_metrics()
+    print(analysis.cleaned_data[["Playing Time Min","Playing Time MP","Playing Time 90s","Minutes_per_Game","Goal_Contribution_Rate"]].head())

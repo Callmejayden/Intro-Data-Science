@@ -293,8 +293,20 @@ class EuropeanFootballAnalysis:
         """
         Task 6: Find the player(s) with the highest number of assists. Return player name, team, assists, league.
         """
-        # Replace with your code
-        pass
+        df = self.cleaned_data.copy()
+
+        player_col = "Player"
+        team_col = "Squad"
+        assists_col = "Performance Ast"
+        league_col = "League"
+
+        # convert to num
+        df[assists_col] = pd.to_numeric(df[assists_col], errors='coerce').fillna(0)
+        max_assists = df[assists_col].max()
+
+        playmakers = df.loc[df[assists_col] == max_assists, [player_col, team_col, assists_col, league_col]].copy()
+        return playmakers.reset_index(drop=True)
+    
 
     def find_ironman(self):
         """
@@ -417,8 +429,8 @@ if __name__ == "__main__":
     analysis.clean_data()   # returns + stores self.clean_data
     analysis.add_derived_metrics()
     top_scorers = analysis.find_top_scorer()
-    print(top_scorers)
-
+    # print(top_scorers)
+    print(analysis.find_playmaker())
 
 
     # print(analysis.cleaned_data[["Player", "Performance Gls","Performance Ast","Playing Time Min","Playing Time MP","Minutes_per_Game","Goal_Contribution_Rate"]].head(10))    

@@ -381,8 +381,54 @@ class EuropeanFootballAnalysis:
         """
         Task 10: Compare the average number of goals scored by each league. Return a bar chart visualization and the average goals per 90 for each league.
         """
-        # Replace with your code
-        pass
+        df = self.cleaned_data.copy()
+
+        goals_col = "Performance Gls"
+        minutes_col = "Playing Time Min"
+        league_col = "League"
+
+        # Ensure numeric
+        df[goals_col] = pd.to_numeric(df[goals_col], errors="coerce").fillna(0)
+        df[minutes_col] = pd.to_numeric(df[minutes_col], errors="coerce").fillna(0)
+
+        # Remove players with no minutes
+        df = df[df[minutes_col] > 0]
+
+        # Aggregate by league
+        league_stats = (
+            df.groupby(league_col)
+            .agg(
+                total_goals=(goals_col, "sum"),
+                total_minutes=(minutes_col, "sum")
+            )
+        )
+
+        # Compute goals per 90
+        league_stats["Avg_Goals_per_90"] = (
+                league_stats["total_goals"] / league_stats["total_minutes"] * 90
+        )
+
+        league_stats = league_stats.sort_values("Avg_Goals_per_90", ascending=False)
+
+        # Bar chart
+        plt.figure(figsize=(10, 6))
+        plt.bar(
+            league_stats.index,
+            league_stats["Avg_Goals_per_90"],
+            color=[self.colors.get(lg) for lg in league_stats.index]
+        )
+
+        plt.title("Average Goals per 90 Minutes by League")
+        plt.xlabel("League")
+        plt.ylabel("Goals per 90")
+        plt.xticks(rotation=30)
+        plt.tight_layout()
+        plt.show()
+
+        # Return dictionary
+        league_dict = league_stats["Avg_Goals_per_90"].to_dict()
+
+        return league_dict
 
     def compare_position_productivity(self):
         """
@@ -487,5 +533,6 @@ if __name__ == "__main__":
     #print(analysis.cleaned_data[["Player", "Pos", "Primary_Pos","Primary_Pos_Full"]].head(20))
     
     #analysis.add_derived_metrics()
-    print(analysis.find_ironman())
+
+    print(analysis.compare_leagues_attack())
 

@@ -507,24 +507,27 @@ class EuropeanFootballAnalysis:
         # remove players who didnt play
         df = df[df[min_col] > 0]
 
+        # G+A (goals + assists)
+        df["GA"] = df[goals_col] + df[ast_col]
+
         # order positions
         pos_order = ["GK", "DF", "MF", "FW"]
 
         #  subplot 1
         avg_pos = (
-            df.groupby(pos_col)["GA_per90"]
+            df.groupby(pos_col)["GA"]
             .mean()
             .reindex(pos_order)
         )
 
         # subplot 2
         league_pos = (
-            df.groupby([league_col, pos_col])["GA_per90"]
+            df.groupby([league_col, pos_col])["GA"]
             .mean()
             .reset_index()
         )
 
-        pivot = league_pos.pivot(index=pos_col, columns=league_col, values="GA_per90")
+        pivot = league_pos.pivot(index=pos_col, columns=league_col, values="GA")
         pivot = pivot.reindex(pos_order)
 
         # plotting
@@ -532,9 +535,9 @@ class EuropeanFootballAnalysis:
 
         # first plot - overall position
         ax[0].bar(avg_pos.index, avg_pos.values)
-        ax[0].set_title("Average G+A per 90 by Position")
+        ax[0].set_title("Average G+A by Position")
         ax[0].set_xlabel("Position")
-        ax[0].set_ylabel("G+A per 90")
+        ax[0].set_ylabel("Average G+A")
 
         # second plot (position per league
         x = np.arange(len(pos_order))
@@ -551,7 +554,7 @@ class EuropeanFootballAnalysis:
 
         ax[1].set_xticks(x + width)
         ax[1].set_xticklabels(pos_order)
-        ax[1].set_title("Average G+A per 90 by Position per League")
+        ax[1].set_title("Average G+A by Position per League")
         ax[1].legend()
 
         plt.tight_layout()
@@ -707,5 +710,12 @@ if __name__ == "__main__":
     # print(list(d["league_position_average"].keys()))
     # fig12, d12 = analysis.age_curve_analysis()
     # print(d12)
-    analysis.add_derived_metrics()
-    print(analysis.cleaned_data[["Playing Time Min","Playing Time MP","Playing Time 90s","Minutes_per_Game","Goal_Contribution_Rate"]].head())
+    # analysis.add_derived_metrics()
+    # print(analysis.cleaned_data[["Playing Time Min","Playing Time MP","Playing Time 90s","Minutes_per_Game","Goal_Contribution_Rate"]].head())
+    fig11, d11 = analysis.compare_position_productivity()
+
+    print("\nTask 11 position_average:")
+    print(d11["position_average"])
+
+    print("\nTask 11 league_position_average keys:")
+    print(d11["league_position_average"].keys())

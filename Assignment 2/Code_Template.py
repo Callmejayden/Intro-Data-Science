@@ -603,7 +603,7 @@ class EuropeanFootballAnalysis:
 
         ax.set_title("Age vs Goal Contribution Rate")
         ax.set_xlabel("Age")
-        ax.set_ylabel("Goal Contribution Rate (G+A per 90)")
+        ax.set_ylabel("Goal Contribution Rate ((G+A)/90s)")
 
         plt.tight_layout()
         plt.show()

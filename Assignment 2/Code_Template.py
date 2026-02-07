@@ -319,9 +319,34 @@ class EuropeanFootballAnalysis:
         """
         Task 8: Find the forward(s) who is most efficent (most goals per minutes played) and has played more than 1000 minutes. Return player name, team, goals, minutes played, goals per minute.
         """
-        # Replace with your code
-        pass
+        df = self.cleaned_data.copy()
+        player_col = "Player"
+        team_col = "Squad"
+        goals_col = "Performance Gls"
+        min_col = "Playing Time Min"
+        pos_col = "Primary_Pos"
 
+        # goals and min -> num
+        df[goals_col] = pd.to_numeric(df[goals_col], errors='coerce').fillna(0)
+        df[min_col] = pd.to_numeric(df[min_col], errors='coerce').fillna(0)
+
+        # filter only forwards with >1000 min
+        fw = df[(df[pos_col] == 'FW') & (df[min_col] > 1000)].copy()
+
+        # no qualifying forwards exist -> return empty
+        if fw.empty:
+            return pd.DataFrame(columns=[player_col, team_col, goals_col, min_col, "Goals_per_Minute"])
+        
+        # calculate 
+        fw["Goals_per_Minute"] = np.where(fw[min_col] > 0, fw[goals_col] / fw[min_col], 0)
+        # find max
+        max_gpm = fw["Goals_per_Minute"].max()
+
+        # select player with hightest goal per min
+        best = fw.loc[fw["Goals_per_Minute"] == max_gpm, [player_col, team_col, goals_col, min_col, "Goals_per_Minute"]].copy()
+        # sort result
+        best = best.sort_values([team_col, player_col]).reset_index(drop=True) 
+        return best
 
     def find_most_disciplined(self):
         """
@@ -430,7 +455,8 @@ if __name__ == "__main__":
     analysis.add_derived_metrics()
     top_scorers = analysis.find_top_scorer()
     # print(top_scorers)
-    print(analysis.find_playmaker())
+    # print(analysis.find_playmaker())
+    print(analysis.find_efficient_striker())
 
 
     # print(analysis.cleaned_data[["Player", "Performance Gls","Performance Ast","Playing Time Min","Playing Time MP","Minutes_per_Game","Goal_Contribution_Rate"]].head(10))    

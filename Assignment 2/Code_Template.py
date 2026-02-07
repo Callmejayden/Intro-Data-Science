@@ -395,11 +395,11 @@ class EuropeanFootballAnalysis:
         min_col = "Playing Time Min"
         nineties_col = "Playing Time 90s"
         pos_col = "Primary_Pos"
-        
+
         # convert to num
         for c in [y_col, r_col, min_col, nineties_col]:
             df[c] = pd.to_numeric(df[c], errors="coerce").fillna(0)
-        
+
         #filter players with >1000 min
         eligible = df[df[min_col]>1000].copy()
 
@@ -623,8 +623,41 @@ class EuropeanFootballAnalysis:
         """
         Task 13: Compare the average number of yellow cards and red cards by each league for defense. Return a plot with two subplots and the data dictionary for the plots.
         """
-        # Replace with your code
-        pass
+        df = self.cleaned_data.copy()
+
+        league_col = "League"
+        yellow_col = "Performance CrdY"
+        red_col = "Performance CrdR"
+
+        # make them num
+        df[yellow_col] = pd.to_numeric(df[yellow_col], errors='coerce').fillna(0)
+        df[red_col] = pd.to_numeric(df[red_col], errors='coerce').fillna(0)
+
+        # group by league
+        league_stats = df.groupby(league_col).agg(
+            avg_yellow=(yellow_col, 'mean'),
+            avg_red=(red_col, 'mean')
+        ).sort_values('avg_yellow', ascending=False)
+
+
+        x = np.arange(len(league_stats))
+        width = 0.25
+
+        fig, ax = plt.subplots(figsize=(10, 6))
+        ax.bar(x - width / 2, league_stats['avg_yellow'], width, label='Yellow', color='yellow')
+        ax.bar(x + width / 2, league_stats['avg_red'], width, label='Red', color='red')
+
+        ax.set_xticks(x)
+        ax.set_xticklabels(league_stats.index, rotation=30)
+        ax.set_ylabel('Average Cards per Player')
+        ax.set_title('Average Yellow and Red Cards by League')
+        ax.legend()
+        plt.tight_layout()
+        plt.show()
+
+        # return dictionary
+        data_dict = league_stats.to_dict(orient='index')
+        return fig, data_dict
 
     def youth_vs_veteran(self):
         """
@@ -632,8 +665,62 @@ class EuropeanFootballAnalysis:
         Compare youth (<=21) vs veteran (>=32) performance across leagues.
         One subplot per position group (excluding Goalkeepers).
         """
-        # Replace with your code
-        pass
+        df = self.cleaned_data.copy()
+
+        # remove goalkeepers
+        df = df[df['Primary_Pos'] != 'GK']
+
+        # age groups
+        df['Age_Group'] = np.where(df['Age'] <= 21, 'Youth',
+                                   np.where(df['Age'] >= 32, 'Veteran', 'Other'))
+        df = df[df['Age_Group'].isin(['Youth', 'Veteran'])]
+
+        # position-specific performance measures (it's our choose)
+        performance_cols = {
+            'FW': ['Performance Gls', 'Performance Ast'],  # Goals + Assists
+            'MF': ['Performance Ast'],  # Assists only
+            'DF': ['Performance CrdY', 'Performance CrdR']  # card fewer ->better
+        }
+
+        # calculate 90-min based metric
+        def calc_metric(row):
+            pos = row['Primary_Pos']
+            cols = performance_cols.get(pos, [])
+            if not cols or row['Playing Time Min'] == 0:
+                return 0
+            if pos in ['FW', 'MF']:
+                # sum goals+assists or assists and scale per 90
+                return row[cols].sum() / row['Playing Time Min'] * 90
+            elif pos == 'DF':
+                # sum cards per 90 (lower is better)
+                return row[cols].sum() / row['Playing Time Min'] * 90
+            return 0
+
+        df['Performance_per_90'] = df.apply(calc_metric, axis=1)
+
+        positions = df['Primary_Pos'].unique()
+        n_pos = len(positions)
+
+        fig, axes = plt.subplots(1, n_pos, figsize=(6 * n_pos, 6), sharey=True)
+        if n_pos == 1:
+            axes = [axes]
+
+        data_dict = {}
+        for ax, pos in zip(axes, positions):
+            pos_df = df[df['Primary_Pos'] == pos]
+            # group by league and age group, average metric
+            group_stats = pos_df.groupby(['League', 'Age_Group'])['Performance_per_90'].mean().unstack(fill_value=0)
+            group_stats.plot(kind='bar', ax=ax)
+            ax.set_title(f"{pos} Position: Youth vs Veteran")
+            ax.set_ylabel("Performance per 90")
+            ax.set_xlabel("League")
+            ax.legend(title="Age Group")
+            data_dict[pos] = group_stats.to_dict()
+
+        plt.tight_layout()
+        plt.show()
+
+        return fig, data_dict
 
     def data_quality_report(self):
         """
@@ -717,5 +804,3 @@ if __name__ == "__main__":
     print("\nTask 11 position_average:")
     print(d11["position_average"])
 
-    print("\nTask 11 league_position_average keys:")
-    print(d11["league_position_average"].keys())

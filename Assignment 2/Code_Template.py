@@ -622,6 +622,7 @@ class EuropeanFootballAnalysis:
     def league_defensive_discipline(self):
         """
         Task 13: Compare the average number of yellow cards and red cards by each league for defense. Return a plot with two subplots and the data dictionary for the plots.
+        note : we use one plot (not two subplots) since yellow and red cards are shown together per league.
         """
         df = self.cleaned_data.copy()
 

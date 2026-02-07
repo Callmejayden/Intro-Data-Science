@@ -312,8 +312,30 @@ class EuropeanFootballAnalysis:
         """
         Task 7: Find the player(s) with the highest number of minutes played. Return player name, team, minutes played, matches played.
         """
-        # Replace with your code
-        pass
+        df = self.cleaned_data.copy()
+
+        player_col = "Player"
+        team_col = "Squad"
+        minutes_col = "Playing Time Min"
+        matches_col = "Playing Time MP"
+
+        # Ensure numeric
+        df[minutes_col] = pd.to_numeric(df[minutes_col], errors="coerce").fillna(0)
+        df[matches_col] = pd.to_numeric(df[matches_col], errors="coerce").fillna(0)
+
+        # Find max minutes played
+        max_minutes = df[minutes_col].max()
+
+        ironman = df.loc[
+            df[minutes_col] == max_minutes,
+            [player_col, team_col, minutes_col, matches_col]
+        ].copy()
+
+        ironman = ironman.sort_values(
+            [team_col, player_col]
+        ).reset_index(drop=True)
+
+        return ironman
 
     def find_efficient_striker(self):
         """
@@ -456,7 +478,7 @@ if __name__ == "__main__":
     top_scorers = analysis.find_top_scorer()
     # print(top_scorers)
     # print(analysis.find_playmaker())
-    print(analysis.find_efficient_striker())
+    #print(analysis.find_efficient_striker())
 
 
     # print(analysis.cleaned_data[["Player", "Performance Gls","Performance Ast","Playing Time Min","Playing Time MP","Minutes_per_Game","Goal_Contribution_Rate"]].head(10))    
@@ -465,4 +487,5 @@ if __name__ == "__main__":
     #print(analysis.cleaned_data[["Player", "Pos", "Primary_Pos","Primary_Pos_Full"]].head(20))
     
     #analysis.add_derived_metrics()
+    print(analysis.find_ironman())
 

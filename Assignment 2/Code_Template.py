@@ -271,7 +271,22 @@ class EuropeanFootballAnalysis:
         """
         Task 5: Find the player(s) with the highest number of goals. Return player name, team, goals, league.
         """
-        # Replace with your code
+        df = self.cleaned_data.copy()
+
+        player_col = "Player"
+        team_col = "Squad"
+        goals_col = "Performance Gls"
+        league_col = "League"
+
+        # if goals -> string, convert to num
+        df[goals_col] = pd.to_numeric(df[goals_col], errors='coerce').fillna(0)
+
+        max_goals = df[goals_col].max()
+
+        top = df.loc[df[goals_col] == max_goals, [player_col, team_col, goals_col, league_col]].copy()
+        top = top.sort_values([league_col, team_col, player_col]).reset_index(drop=True)
+
+        return top        
         pass
 
     def find_playmaker(self):
@@ -401,22 +416,15 @@ if __name__ == "__main__":
     analysis.scrape()  # sets raw_data
     analysis.clean_data()   # returns + stores self.clean_data
     analysis.add_derived_metrics()
+    top_scorers = analysis.find_top_scorer()
+    print(top_scorers)
 
 
-    print(
-        analysis.cleaned_data[
-            ["Player",
-            "Performance Gls",
-            "Performance Ast",
-            "Playing Time Min",
-            "Playing Time MP",
-            "Minutes_per_Game",
-            "Goal_Contribution_Rate"]
-        ].head(10)
-    )    
+
+    # print(analysis.cleaned_data[["Player", "Performance Gls","Performance Ast","Playing Time Min","Playing Time MP","Minutes_per_Game","Goal_Contribution_Rate"]].head(10))    
     #print(analysis.cleaned_data.head(20))
     #print(analysis.cleaned_data[["Player","Nation","Comp","League","Playing Time Min"]].head(20))
     #print(analysis.cleaned_data[["Player", "Pos", "Primary_Pos","Primary_Pos_Full"]].head(20))
     
-    #analysis.add_derived_metrics() TODO
+    #analysis.add_derived_metrics()
 

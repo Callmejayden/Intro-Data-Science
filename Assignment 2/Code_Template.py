@@ -777,10 +777,10 @@ class EuropeanFootballAnalysis:
 if __name__ == "__main__":
 
     analysis = EuropeanFootballAnalysis()
-    analysis.scrape()  # sets raw_data
-    analysis.clean_data()   # returns + stores self.clean_data
-    analysis.add_derived_metrics()
-    top_scorers = analysis.find_top_scorer()
+    # analysis.scrape()  # sets raw_data
+    # analysis.clean_data()   # returns + stores self.clean_data
+    # analysis.add_derived_metrics()
+    # top_scorers = analysis.find_top_scorer()
     # print(top_scorers)
     # print(analysis.find_playmaker())
     #print(analysis.find_efficient_striker())
@@ -799,8 +799,58 @@ if __name__ == "__main__":
     # print(d12)
     # analysis.add_derived_metrics()
     # print(analysis.cleaned_data[["Playing Time Min","Playing Time MP","Playing Time 90s","Minutes_per_Game","Goal_Contribution_Rate"]].head())
-    fig11, d11 = analysis.compare_position_productivity()
+    # fig11, d11 = analysis.compare_position_productivity()
 
-    print("\nTask 11 position_average:")
+    # print("\nTask 11 position_average:")
+    # print(d11["position_average"])
+
+    # Task 1–4
+    analysis.scrape()
+    analysis.clean_data()
+    analysis.add_derived_metrics()
+    print("Tasks 1–4 done")
+
+    # Task 5
+    print("\nTask 5 Top Scorer")
+    print(analysis.find_top_scorer().head())
+
+    # Task 6
+    print("\nTask 6 Playmaker")
+    print(analysis.find_playmaker().head())
+
+    # Task 7
+    print("\nTask 7 Ironman")
+    print(analysis.find_ironman().head())
+
+    # Task 8
+    print("\nTask 8 Efficient Striker")
+    print(analysis.find_efficient_striker().head())
+
+    # Task 9
+    print("\nTask 9 Discipline")
+    print(analysis.find_most_disciplined().head())
+
+    # Task 10
+    print("\nTask 10 League Attack")
+    print(analysis.compare_leagues_attack())
+
+    # Task 11
+    fig11, d11 = analysis.compare_position_productivity()
+    print("\nTask 11 Position Avg")
     print(d11["position_average"])
+
+    # Task 12
+    fig12, d12 = analysis.age_curve_analysis()
+    print("\nTask 12 Correlation")
+    print(d12)
+
+    # Task 13
+    fig13, d13 = analysis.league_defensive_discipline()
+    print("\nTask 13 League Discipline")
+    print(d13)
+
+    # Task 14
+    fig14, d14 = analysis.youth_vs_veteran()
+    print("\nTask 14 Youth vs Veteran")
+    print(list(d14.keys()))
 
